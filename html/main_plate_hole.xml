@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mscript xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <version>9.8</version>
+   <release>2020a</release>
+   <date>2021-06-03</date>
+   <cell>
+      <count>1</count>
+      <mcode>% To mesh a plate with hole at center using Transfinite Interpolation (TFI)
+%{
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Warning : On running this the workspace memory will be deleted. Save if
+ any data present before running the code !!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------------------------
+ Code originally written by : Siva Srinivas Kolukula, PhD                |
+                   Structural Mechanics Laboratory                       |
+                   Indira Gandhi Center for Atomic Research              |
+                   India                                                 |
+ E-mail : allwayzitzme@gmail.com                                         |
+ web-link: https://sites.google.com/site/kolukulasivasrinivas/           |
+                                                                         |
+ Code is modified by: Jin Yang, PhD (2019@Caltech)                       |
+ Contact: Jin Yang, jyang526@wisc.edu   -or-   aldicdvc@gmail.com        |
+--------------------------------------------------------------------------
+%}
+% Version 1 : 15 November 2013
+% Modified version: June 02, 2021</mcode>
+      <mcode-xmlized>
+         <mwsh:code xml:space="preserve"><mwsh:comments xml:space="preserve">% To mesh a plate with hole at center using Transfinite Interpolation (TFI)</mwsh:comments>
+<mwsh:comments xml:space="preserve">%{
+</mwsh:comments><mwsh:comments xml:space="preserve">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</mwsh:comments><mwsh:comments xml:space="preserve"> Warning : On running this the workspace memory will be deleted. Save if
+</mwsh:comments><mwsh:comments xml:space="preserve"> any data present before running the code !!
+</mwsh:comments><mwsh:comments xml:space="preserve">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</mwsh:comments><mwsh:comments xml:space="preserve">--------------------------------------------------------------------------
+</mwsh:comments><mwsh:comments xml:space="preserve"> Code originally written by : Siva Srinivas Kolukula, PhD                |
+</mwsh:comments><mwsh:comments xml:space="preserve">                   Structural Mechanics Laboratory                       |
+</mwsh:comments><mwsh:comments xml:space="preserve">                   Indira Gandhi Center for Atomic Research              |
+</mwsh:comments><mwsh:comments xml:space="preserve">                   India                                                 |
+</mwsh:comments><mwsh:comments xml:space="preserve"> E-mail : allwayzitzme@gmail.com                                         |
+</mwsh:comments><mwsh:comments xml:space="preserve"> web-link: https://sites.google.com/site/kolukulasivasrinivas/           |
+</mwsh:comments><mwsh:comments xml:space="preserve">                                                                         |
+</mwsh:comments><mwsh:comments xml:space="preserve"> Code is modified by: Jin Yang, PhD (2019@Caltech)                       |
+</mwsh:comments><mwsh:comments xml:space="preserve"> Contact: Jin Yang, jyang526@wisc.edu   -or-   aldicdvc@gmail.com        |
+</mwsh:comments><mwsh:comments xml:space="preserve">--------------------------------------------------------------------------
+</mwsh:comments><mwsh:comments xml:space="preserve">%}
+</mwsh:comments><mwsh:comments xml:space="preserve">% Version 1 : 15 November 2013</mwsh:comments>
+<mwsh:comments xml:space="preserve">% Modified version: June 02, 2021</mwsh:comments></mwsh:code>
+      </mcode-xmlized>
+      <mcode-count>1</mcode-count>
+      <cellOutputTarget>1</cellOutputTarget>
+   </cell>
+   <cell>
+      <count>2</count>
+      <mcode>clc ; clear; close all;</mcode>
+      <mcode-xmlized>
+         <mwsh:code xml:space="preserve">clc ; clear; close <mwsh:strings xml:space="preserve">all</mwsh:strings>;</mwsh:code>
+      </mcode-xmlized>
+      <mcode-count>2</mcode-count>
+      <cellOutputTarget>2</cellOutputTarget>
+   </cell>
+   <cell>
+      <count>3</count>
+      <steptitle>Dr. Siva Srinivas Kolukula's code</steptitle>
+      <mcode>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Dimensions of the plate
+L = 350-20 - (40+20) ;                % Horizontal length of the plate
+B = 350-20 - (0+20) ;                 % Vertical breadth of the plate
+
+% Number of discretizations along xi and eta axis
+m = 9 ;
+n = 9 ;
+%
+% Model plate as two regions which lie in first quadrant
+global R theta;
+R = 55 ;               % Radius of the hole at center
+%%%%%%%%%%%%%%%%%%%%%%%Dont change from here%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+theta = pi/2 ;          % Quarter angle of the hole
+global O P1 P2 P3 P4 P5 CMP ;
+O = [0,0] ;                 % Centre of plate and hole
+P1 = O + [R 0.] ;           % Edge of the hole and plate
+P2 = O + [L/2 0.] ;         % Edge of the plate
+P3 = O + [L/2 B/2] ;        % Edge of the plate
+P4 = O + [0. B/2] ;         % Edge of the plate
+P5 = O + [0. R] ;           % Edge of the hole and plate
+CMP = [R*cos(theta/2.) R*sin(theta/2.)] ;
+% discretize along xi and eta axis
+xi = linspace(0.,1,m) ;
+eta = linspace(0.,1.,n) ;
+% Number of Domains
+Domain = 2 ;
+DX = cell(1,Domain) ;
+DY = cell(1,Domain) ;
+for d = 1:Domain        % Loop for two domains lying in first coordinate
+    % Initialize matrices in x and y axis
+    X = zeros(m,n) ;
+    Y = zeros(m,n) ;
+
+    for i = 1:m
+        Xi = xi(i) ;
+        for j = 1:n
+            Eta = eta(j) ;
+
+            % Transfinite Interpolation
+            XY = (1-Eta)*Xb(Xi,d)+Eta*Xt(Xi,d)+(1-Xi)*Xl(Eta,d)+Xi*Xr(Eta,d)......
+                -(Xi*Eta*Xt(1,d)+Xi*(1-Eta)*Xb(1,d)+Eta*(1-Xi)*Xt(0,d)+(1-Xi)*(1-Eta)*Xb(0,d)) ;
+
+            X(i,j) = XY(1) ;
+            Y(i,j) = XY(2) ;
+
+        end
+    end
+    DX{d} = X ;
+    DY{d} = Y ;
+end
+% Arrange the coordinates for each domain
+X1 = DX{1} ; Y1 = DY{1} ;       % Grid for first domain
+X2 = DX{2} ; Y2 = DY{2} ;       % Grid for second domain
+X = [X1 ;X2(m-1:-1:1,:)] ;      % Merge both the domains
+Y = [Y1 ;Y2(m-1:-1:1,:)] ;
+% Plot 1/4th of the plate
+figure(1)
+plotgrid(X,Y) ;
+% break
+% Plot other domains of plate by imaging coordinates
+vec = [1 1 ; -1 1 ; -1 -1 ; 1 -1] ;
+figure(2)
+for quadrant = 1:4
+    plotgrid(vec(quadrant,1)*X,vec(quadrant,2)*Y) ;
+    hold on
+end
+
+axis on;</mcode>
+      <mcode-xmlized>
+         <mwsh:code xml:space="preserve"><mwsh:comments xml:space="preserve">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</mwsh:comments>
+
+<mwsh:comments xml:space="preserve">% Dimensions of the plate</mwsh:comments>
+L = 350-20 - (40+20) ;                <mwsh:comments xml:space="preserve">% Horizontal length of the plate</mwsh:comments>
+B = 350-20 - (0+20) ;                 <mwsh:comments xml:space="preserve">% Vertical breadth of the plate</mwsh:comments>
+
+<mwsh:comments xml:space="preserve">% Number of discretizations along xi and eta axis</mwsh:comments>
+m = 9 ;
+n = 9 ;
+<mwsh:comments xml:space="preserve">%</mwsh:comments>
+<mwsh:comments xml:space="preserve">% Model plate as two regions which lie in first quadrant</mwsh:comments>
+<mwsh:keywords xml:space="preserve">global</mwsh:keywords> R theta;
+R = 55 ;               <mwsh:comments xml:space="preserve">% Radius of the hole at center</mwsh:comments>
+<mwsh:comments xml:space="preserve">%%%%%%%%%%%%%%%%%%%%%%%Dont change from here%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</mwsh:comments>
+theta = pi/2 ;          <mwsh:comments xml:space="preserve">% Quarter angle of the hole</mwsh:comments>
+<mwsh:keywords xml:space="preserve">global</mwsh:keywords> O P1 P2 P3 P4 P5 CMP ;
+O = [0,0] ;                 <mwsh:comments xml:space="preserve">% Centre of plate and hole</mwsh:comments>
+P1 = O + [R 0.] ;           <mwsh:comments xml:space="preserve">% Edge of the hole and plate</mwsh:comments>
+P2 = O + [L/2 0.] ;         <mwsh:comments xml:space="preserve">% Edge of the plate</mwsh:comments>
+P3 = O + [L/2 B/2] ;        <mwsh:comments xml:space="preserve">% Edge of the plate</mwsh:comments>
+P4 = O + [0. B/2] ;         <mwsh:comments xml:space="preserve">% Edge of the plate</mwsh:comments>
+P5 = O + [0. R] ;           <mwsh:comments xml:space="preserve">% Edge of the hole and plate</mwsh:comments>
+CMP = [R*cos(theta/2.) R*sin(theta/2.)] ;
+<mwsh:comments xml:space="preserve">% discretize along xi and eta axis</mwsh:comments>
+xi = linspace(0.,1,m) ;
+eta = linspace(0.,1.,n) ;
+<mwsh:comments xml:space="preserve">% Number of Domains</mwsh:comments>
+Domain = 2 ;
+DX = cell(1,Domain) ;
+DY = cell(1,Domain) ;
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> d = 1:Domain        <mwsh:comments xml:space="preserve">% Loop for two domains lying in first coordinate</mwsh:comments>
+    <mwsh:comments xml:space="preserve">% Initialize matrices in x and y axis</mwsh:comments>
+    X = zeros(m,n) ;
+    Y = zeros(m,n) ;
+
+    <mwsh:keywords xml:space="preserve">for</mwsh:keywords> i = 1:m
+        Xi = xi(i) ;
+        <mwsh:keywords xml:space="preserve">for</mwsh:keywords> j = 1:n
+            Eta = eta(j) ;
+
+            <mwsh:comments xml:space="preserve">% Transfinite Interpolation</mwsh:comments>
+            XY = (1-Eta)*Xb(Xi,d)+Eta*Xt(Xi,d)+(1-Xi)*Xl(Eta,d)+Xi*Xr(Eta,d)<mwsh:keywords xml:space="preserve">...</mwsh:keywords><mwsh:comments xml:space="preserve">...</mwsh:comments>
+                -(Xi*Eta*Xt(1,d)+Xi*(1-Eta)*Xb(1,d)+Eta*(1-Xi)*Xt(0,d)+(1-Xi)*(1-Eta)*Xb(0,d)) ;
+
+            X(i,j) = XY(1) ;
+            Y(i,j) = XY(2) ;
+
+        <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+    <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+    DX{d} = X ;
+    DY{d} = Y ;
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+<mwsh:comments xml:space="preserve">% Arrange the coordinates for each domain</mwsh:comments>
+X1 = DX{1} ; Y1 = DY{1} ;       <mwsh:comments xml:space="preserve">% Grid for first domain</mwsh:comments>
+X2 = DX{2} ; Y2 = DY{2} ;       <mwsh:comments xml:space="preserve">% Grid for second domain</mwsh:comments>
+X = [X1 ;X2(m-1:-1:1,:)] ;      <mwsh:comments xml:space="preserve">% Merge both the domains</mwsh:comments>
+Y = [Y1 ;Y2(m-1:-1:1,:)] ;
+<mwsh:comments xml:space="preserve">% Plot 1/4th of the plate</mwsh:comments>
+figure(1)
+plotgrid(X,Y) ;
+<mwsh:comments xml:space="preserve">% break</mwsh:comments>
+<mwsh:comments xml:space="preserve">% Plot other domains of plate by imaging coordinates</mwsh:comments>
+vec = [1 1 ; -1 1 ; -1 -1 ; 1 -1] ;
+figure(2)
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> quadrant = 1:4
+    plotgrid(vec(quadrant,1)*X,vec(quadrant,2)*Y) ;
+    hold <mwsh:strings xml:space="preserve">on</mwsh:strings>
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+axis <mwsh:strings xml:space="preserve">on</mwsh:strings>;</mwsh:code>
+      </mcode-xmlized>
+      <mcode-count>3</mcode-count>
+      <cellOutputTarget>3</cellOutputTarget>
+      <img src="main_plate_hole_01.png"/>
+      <img src="main_plate_hole_02.png"/>
+   </cell>
+   <cell>
+      <count>4</count>
+      <steptitle>Generate finite element mesh nodal coordinates and Q4 elements</steptitle>
+      <mcode>%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+O2 = [193, 543]; % hole center coordinate
+
+%%%%% top right %%%%%
+coord_x_1 = X + O2(1);
+coord_y_1 = Y + O2(2);
+
+M = size(coord_x_1,1); N = size(coord_x_1,2);
+elementsFEM1 = zeros((M-1)*(N-1),4);
+for j = 1:N-1
+    for i = 1:M-1
+        elementsFEM1((j-1)*(M-1)+i ,:) = [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    end
+end
+
+%%%%% top left %%%%%
+coord_x_2 = -X + O2(1);
+coord_y_2 = Y + O2(2);
+elementsFEM2 = zeros((M-1)*(N-1),4);
+for j = 1:N-1
+    for i = 1:M-1
+        elementsFEM2((j-1)*(M-1)+i ,:) = M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    end
+end
+
+%%%%% bottom left %%%%%
+coord_x_3 = -X + O2(1);
+coord_y_3 = -Y + O2(2);
+elementsFEM3 = zeros((M-1)*(N-1),4);
+for j = 1:N-1
+    for i = 1:M-1
+        elementsFEM3((j-1)*(M-1)+i ,:) = 2*M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    end
+end
+
+%%%%% bottom right %%%%%
+coord_x_4 = X + O2(1);
+coord_y_4 = -Y + O2(2);
+elementsFEM4 = zeros((M-1)*(N-1),4);
+for j = 1:N-1
+    for i = 1:M-1
+        elementsFEM4((j-1)*(M-1)+i ,:) = 3*M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    end
+end
+
+%%%%% Combine coordinates and elements %%%%%
+coordinatesFEM = [coord_x_1(:) coord_y_1(:);  coord_x_2(:) coord_y_2(:);
+                  coord_x_3(:) coord_y_3(:);  coord_x_4(:) coord_y_4(:) ];
+
+elementsFEM = [elementsFEM1; elementsFEM2; elementsFEM3; elementsFEM4];
+
+MeshSkeleton = ones(size(coordinatesFEM,1),1);
+PlotMesh_show(MeshSkeleton, coordinatesFEM, elementsFEM);</mcode>
+      <mcode-xmlized>
+         <mwsh:code xml:space="preserve"><mwsh:comments xml:space="preserve">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</mwsh:comments>
+O2 = [193, 543]; <mwsh:comments xml:space="preserve">% hole center coordinate</mwsh:comments>
+
+<mwsh:comments xml:space="preserve">%%%%% top right %%%%%</mwsh:comments>
+coord_x_1 = X + O2(1);
+coord_y_1 = Y + O2(2);
+
+M = size(coord_x_1,1); N = size(coord_x_1,2);
+elementsFEM1 = zeros((M-1)*(N-1),4);
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> j = 1:N-1
+    <mwsh:keywords xml:space="preserve">for</mwsh:keywords> i = 1:M-1
+        elementsFEM1((j-1)*(M-1)+i ,:) = [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+<mwsh:comments xml:space="preserve">%%%%% top left %%%%%</mwsh:comments>
+coord_x_2 = -X + O2(1);
+coord_y_2 = Y + O2(2);
+elementsFEM2 = zeros((M-1)*(N-1),4);
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> j = 1:N-1
+    <mwsh:keywords xml:space="preserve">for</mwsh:keywords> i = 1:M-1
+        elementsFEM2((j-1)*(M-1)+i ,:) = M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+<mwsh:comments xml:space="preserve">%%%%% bottom left %%%%%</mwsh:comments>
+coord_x_3 = -X + O2(1);
+coord_y_3 = -Y + O2(2);
+elementsFEM3 = zeros((M-1)*(N-1),4);
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> j = 1:N-1
+    <mwsh:keywords xml:space="preserve">for</mwsh:keywords> i = 1:M-1
+        elementsFEM3((j-1)*(M-1)+i ,:) = 2*M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+<mwsh:comments xml:space="preserve">%%%%% bottom right %%%%%</mwsh:comments>
+coord_x_4 = X + O2(1);
+coord_y_4 = -Y + O2(2);
+elementsFEM4 = zeros((M-1)*(N-1),4);
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> j = 1:N-1
+    <mwsh:keywords xml:space="preserve">for</mwsh:keywords> i = 1:M-1
+        elementsFEM4((j-1)*(M-1)+i ,:) = 3*M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
+    <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+<mwsh:comments xml:space="preserve">%%%%% Combine coordinates and elements %%%%%</mwsh:comments>
+coordinatesFEM = [coord_x_1(:) coord_y_1(:);  coord_x_2(:) coord_y_2(:);
+                  coord_x_3(:) coord_y_3(:);  coord_x_4(:) coord_y_4(:) ];
+
+elementsFEM = [elementsFEM1; elementsFEM2; elementsFEM3; elementsFEM4];
+
+MeshSkeleton = ones(size(coordinatesFEM,1),1);
+PlotMesh_show(MeshSkeleton, coordinatesFEM, elementsFEM);</mwsh:code>
+      </mcode-xmlized>
+      <mcode-count>4</mcode-count>
+      <cellOutputTarget>4</cellOutputTarget>
+      <img src="main_plate_hole_03.png"/>
+   </cell>
+   <cell>
+      <count>5</count>
+      <steptitle>%%%%% Add more elements at the top and the bottom %%%%%</steptitle>
+      <mcode>[row1,col1] = find( coordinatesFEM(:,1)&gt;0 );
+x_min = min(coordinatesFEM(row1,1));
+x_max = max(coordinatesFEM(row1,1));
+y_min = min(coordinatesFEM(row1,2));
+y_max = max(coordinatesFEM(row1,2));
+
+[row2,col2] = find(coordinatesFEM(:,2) == y_min);
+[row3,col3] = find(coordinatesFEM(:,2) == y_max);
+
+xList = unique(coordinatesFEM(row2,1));
+yList1 = flipud([y_min:-16:40]');
+yList2 = [y_max:16:1040-40]';
+
+[xGrid1,yGrid1] = ndgrid(xList,yList1);
+[xGrid2,yGrid2] = ndgrid(xList,yList2);
+DICpara.winstepsize = 16;
+DICpara.ImgSize = [400,1040];
+
+DICmesh1 = MeshSetUp(xGrid1,yGrid1,DICpara);
+DICmesh2 = MeshSetUp(xGrid2,yGrid2,DICpara);
+
+sizeCoordFEM1 = size(coordinatesFEM,1);
+sizeCoordFEM2 = size(DICmesh1.coordinatesFEM,1);
+
+
+%%%%% Combine all the elements %%%%%
+coordinatesFEM = [coordinatesFEM;
+                 DICmesh1.coordinatesFEM;
+                 DICmesh2.coordinatesFEM];
+elementsFEM = [elementsFEM;
+               sizeCoordFEM1 + DICmesh1.elementsFEM;
+               sizeCoordFEM1 + sizeCoordFEM2 + DICmesh2.elementsFEM];
+
+
+%%%%% Delete repeated nodes %%%%%
+for tempi = 2:size(coordinatesFEM,1)
+    if coordinatesFEM(tempi,1)&gt;0
+        % Check whether it's repeated or not
+        [min1,ind1] = min ( sum( abs( ones(tempi-1,1)*coordinatesFEM(tempi,:) - coordinatesFEM(1:tempi-1,:) ) , 2) );
+
+        if min1 &lt; 1e-9
+
+            coordinatesFEM(tempi,:) = 0*coordinatesFEM(tempi,:); % Clear this coordinate point
+
+            [row1,col1] = find(elementsFEM == tempi);
+            for tempj = 1:length(row1)
+                elementsFEM(row1(tempj),col1(tempj)) = ind1;
+            end
+
+        end
+
+    end
+end
+
+
+%%%%% Reorder elements %%%%%
+for tempi = 1:size(elementsFEM,1)
+    tempxy_center = mean(coordinatesFEM(elementsFEM(tempi,:),:));
+    tempxy = coordinatesFEM(elementsFEM(tempi,:),:) - ones(4,1)*tempxy_center;
+    temptheta = atan2( tempxy(:,2), tempxy(:,1) );
+    temptheta(temptheta&lt;0) = temptheta(temptheta&lt;0) + 2*pi;
+
+    [~,temptheta_ind] = sort(temptheta);
+    elementsFEM(tempi,:) = elementsFEM(tempi,temptheta_ind);
+end
+
+
+%%%%% Visualization %%%%%
+MeshSkeleton = ones(size( coordinatesFEM,1),1);
+PlotMesh_show(MeshSkeleton,  coordinatesFEM,  elementsFEM);
+
+
+%%%%% Save mat file %%%%%
+save('plate_hole.mat','coordinatesFEM','elementsFEM');</mcode>
+      <mcode-xmlized>
+         <mwsh:code xml:space="preserve">[row1,col1] = find( coordinatesFEM(:,1)&gt;0 );
+x_min = min(coordinatesFEM(row1,1));
+x_max = max(coordinatesFEM(row1,1));
+y_min = min(coordinatesFEM(row1,2));
+y_max = max(coordinatesFEM(row1,2));
+
+[row2,col2] = find(coordinatesFEM(:,2) == y_min);
+[row3,col3] = find(coordinatesFEM(:,2) == y_max);
+
+xList = unique(coordinatesFEM(row2,1));
+yList1 = flipud([y_min:-16:40]');
+yList2 = [y_max:16:1040-40]';
+
+[xGrid1,yGrid1] = ndgrid(xList,yList1);
+[xGrid2,yGrid2] = ndgrid(xList,yList2);
+DICpara.winstepsize = 16;
+DICpara.ImgSize = [400,1040];
+
+DICmesh1 = MeshSetUp(xGrid1,yGrid1,DICpara);
+DICmesh2 = MeshSetUp(xGrid2,yGrid2,DICpara);
+
+sizeCoordFEM1 = size(coordinatesFEM,1);
+sizeCoordFEM2 = size(DICmesh1.coordinatesFEM,1);
+
+
+<mwsh:comments xml:space="preserve">%%%%% Combine all the elements %%%%%</mwsh:comments>
+coordinatesFEM = [coordinatesFEM;
+                 DICmesh1.coordinatesFEM;
+                 DICmesh2.coordinatesFEM];
+elementsFEM = [elementsFEM;
+               sizeCoordFEM1 + DICmesh1.elementsFEM;
+               sizeCoordFEM1 + sizeCoordFEM2 + DICmesh2.elementsFEM];
+
+
+<mwsh:comments xml:space="preserve">%%%%% Delete repeated nodes %%%%%</mwsh:comments>
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> tempi = 2:size(coordinatesFEM,1)
+    <mwsh:keywords xml:space="preserve">if</mwsh:keywords> coordinatesFEM(tempi,1)&gt;0
+        <mwsh:comments xml:space="preserve">% Check whether it's repeated or not</mwsh:comments>
+        [min1,ind1] = min ( sum( abs( ones(tempi-1,1)*coordinatesFEM(tempi,:) - coordinatesFEM(1:tempi-1,:) ) , 2) );
+
+        <mwsh:keywords xml:space="preserve">if</mwsh:keywords> min1 &lt; 1e-9
+
+            coordinatesFEM(tempi,:) = 0*coordinatesFEM(tempi,:); <mwsh:comments xml:space="preserve">% Clear this coordinate point</mwsh:comments>
+
+            [row1,col1] = find(elementsFEM == tempi);
+            <mwsh:keywords xml:space="preserve">for</mwsh:keywords> tempj = 1:length(row1)
+                elementsFEM(row1(tempj),col1(tempj)) = ind1;
+            <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+        <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+    <mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+
+<mwsh:comments xml:space="preserve">%%%%% Reorder elements %%%%%</mwsh:comments>
+<mwsh:keywords xml:space="preserve">for</mwsh:keywords> tempi = 1:size(elementsFEM,1)
+    tempxy_center = mean(coordinatesFEM(elementsFEM(tempi,:),:));
+    tempxy = coordinatesFEM(elementsFEM(tempi,:),:) - ones(4,1)*tempxy_center;
+    temptheta = atan2( tempxy(:,2), tempxy(:,1) );
+    temptheta(temptheta&lt;0) = temptheta(temptheta&lt;0) + 2*pi;
+
+    [~,temptheta_ind] = sort(temptheta);
+    elementsFEM(tempi,:) = elementsFEM(tempi,temptheta_ind);
+<mwsh:keywords xml:space="preserve">end</mwsh:keywords>
+
+
+<mwsh:comments xml:space="preserve">%%%%% Visualization %%%%%</mwsh:comments>
+MeshSkeleton = ones(size( coordinatesFEM,1),1);
+PlotMesh_show(MeshSkeleton,  coordinatesFEM,  elementsFEM);
+
+
+<mwsh:comments xml:space="preserve">%%%%% Save mat file %%%%%</mwsh:comments>
+save(<mwsh:strings xml:space="preserve">'plate_hole.mat'</mwsh:strings>,<mwsh:strings xml:space="preserve">'coordinatesFEM'</mwsh:strings>,<mwsh:strings xml:space="preserve">'elementsFEM'</mwsh:strings>);</mwsh:code>
+      </mcode-xmlized>
+      <mcode-count>5</mcode-count>
+      <cellOutputTarget>5</cellOutputTarget>
+      <img src="main_plate_hole_04.png"/>
+   </cell>
+   <originalCode>% To mesh a plate with hole at center using Transfinite Interpolation (TFI)&#xD;
+%{&#xD;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~&#xD;
+ Warning : On running this the workspace memory will be deleted. Save if&#xD;
+ any data present before running the code !!&#xD;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~&#xD;
+--------------------------------------------------------------------------&#xD;
+ Code originally written by : Siva Srinivas Kolukula, PhD                |&#xD;
+                   Structural Mechanics Laboratory                       |&#xD;
+                   Indira Gandhi Center for Atomic Research              |&#xD;
+                   India                                                 |&#xD;
+ E-mail : allwayzitzme@gmail.com                                         |&#xD;
+ web-link: https://sites.google.com/site/kolukulasivasrinivas/           |&#xD;
+                                                                         |&#xD;
+ Code is modified by: Jin Yang, PhD (2019@Caltech)                       |&#xD;
+ Contact: Jin Yang, jyang526@wisc.edu   -or-   aldicdvc@gmail.com        |&#xD;
+--------------------------------------------------------------------------&#xD;
+%}&#xD;
+% Version 1 : 15 November 2013&#xD;
+% Modified version: June 02, 2021&#xD;
+&#xD;
+%%&#xD;
+clc ; clear; close all;&#xD;
+&#xD;
+%% Dr. Siva Srinivas Kolukula's code&#xD;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%&#xD;
+&#xD;
+% Dimensions of the plate&#xD;
+L = 350-20 - (40+20) ;                % Horizontal length of the plate&#xD;
+B = 350-20 - (0+20) ;                 % Vertical breadth of the plate&#xD;
+&#xD;
+% Number of discretizations along xi and eta axis&#xD;
+m = 9 ;&#xD;
+n = 9 ;&#xD;
+%&#xD;
+% Model plate as two regions which lie in first quadrant&#xD;
+global R theta;&#xD;
+R = 55 ;               % Radius of the hole at center&#xD;
+%%%%%%%%%%%%%%%%%%%%%%%Dont change from here%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%&#xD;
+theta = pi/2 ;          % Quarter angle of the hole&#xD;
+global O P1 P2 P3 P4 P5 CMP ;&#xD;
+O = [0,0] ;                 % Centre of plate and hole&#xD;
+P1 = O + [R 0.] ;           % Edge of the hole and plate&#xD;
+P2 = O + [L/2 0.] ;         % Edge of the plate&#xD;
+P3 = O + [L/2 B/2] ;        % Edge of the plate&#xD;
+P4 = O + [0. B/2] ;         % Edge of the plate&#xD;
+P5 = O + [0. R] ;           % Edge of the hole and plate&#xD;
+CMP = [R*cos(theta/2.) R*sin(theta/2.)] ;&#xD;
+% discretize along xi and eta axis&#xD;
+xi = linspace(0.,1,m) ;&#xD;
+eta = linspace(0.,1.,n) ;&#xD;
+% Number of Domains &#xD;
+Domain = 2 ;&#xD;
+DX = cell(1,Domain) ;   &#xD;
+DY = cell(1,Domain) ;&#xD;
+for d = 1:Domain        % Loop for two domains lying in first coordinate&#xD;
+    % Initialize matrices in x and y axis&#xD;
+    X = zeros(m,n) ;&#xD;
+    Y = zeros(m,n) ;&#xD;
+&#xD;
+    for i = 1:m&#xD;
+        Xi = xi(i) ;&#xD;
+        for j = 1:n&#xD;
+            Eta = eta(j) ;&#xD;
+        &#xD;
+            % Transfinite Interpolation &#xD;
+            XY = (1-Eta)*Xb(Xi,d)+Eta*Xt(Xi,d)+(1-Xi)*Xl(Eta,d)+Xi*Xr(Eta,d)......&#xD;
+                -(Xi*Eta*Xt(1,d)+Xi*(1-Eta)*Xb(1,d)+Eta*(1-Xi)*Xt(0,d)+(1-Xi)*(1-Eta)*Xb(0,d)) ;&#xD;
+    &#xD;
+            X(i,j) = XY(1) ;&#xD;
+            Y(i,j) = XY(2) ;&#xD;
+        &#xD;
+        end &#xD;
+    end&#xD;
+    DX{d} = X ;&#xD;
+    DY{d} = Y ;&#xD;
+end&#xD;
+% Arrange the coordinates for each domain&#xD;
+X1 = DX{1} ; Y1 = DY{1} ;       % Grid for first domain&#xD;
+X2 = DX{2} ; Y2 = DY{2} ;       % Grid for second domain&#xD;
+X = [X1 ;X2(m-1:-1:1,:)] ;      % Merge both the domains&#xD;
+Y = [Y1 ;Y2(m-1:-1:1,:)] ;&#xD;
+% Plot 1/4th of the plate&#xD;
+figure(1)&#xD;
+plotgrid(X,Y) ;&#xD;
+% break&#xD;
+% Plot other domains of plate by imaging coordinates&#xD;
+vec = [1 1 ; -1 1 ; -1 -1 ; 1 -1] ;&#xD;
+figure(2)&#xD;
+for quadrant = 1:4&#xD;
+    plotgrid(vec(quadrant,1)*X,vec(quadrant,2)*Y) ;&#xD;
+    hold on&#xD;
+end&#xD;
+    &#xD;
+axis on;&#xD;
+&#xD;
+&#xD;
+%% Generate finite element mesh nodal coordinates and Q4 elements&#xD;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%&#xD;
+O2 = [193, 543]; % hole center coordinate&#xD;
+&#xD;
+%%%%% top right %%%%%&#xD;
+coord_x_1 = X + O2(1); &#xD;
+coord_y_1 = Y + O2(2); &#xD;
+&#xD;
+M = size(coord_x_1,1); N = size(coord_x_1,2);&#xD;
+elementsFEM1 = zeros((M-1)*(N-1),4);&#xD;
+for j = 1:N-1&#xD;
+    for i = 1:M-1&#xD;
+        elementsFEM1((j-1)*(M-1)+i ,:) = [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];&#xD;
+    end&#xD;
+end&#xD;
+&#xD;
+%%%%% top left %%%%%&#xD;
+coord_x_2 = -X + O2(1); &#xD;
+coord_y_2 = Y + O2(2);&#xD;
+elementsFEM2 = zeros((M-1)*(N-1),4);&#xD;
+for j = 1:N-1&#xD;
+    for i = 1:M-1&#xD;
+        elementsFEM2((j-1)*(M-1)+i ,:) = M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];&#xD;
+    end&#xD;
+end&#xD;
+&#xD;
+%%%%% bottom left %%%%%&#xD;
+coord_x_3 = -X + O2(1);  &#xD;
+coord_y_3 = -Y + O2(2);  &#xD;
+elementsFEM3 = zeros((M-1)*(N-1),4);&#xD;
+for j = 1:N-1&#xD;
+    for i = 1:M-1&#xD;
+        elementsFEM3((j-1)*(M-1)+i ,:) = 2*M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];&#xD;
+    end&#xD;
+end&#xD;
+&#xD;
+%%%%% bottom right %%%%%&#xD;
+coord_x_4 = X + O2(1);&#xD;
+coord_y_4 = -Y + O2(2); &#xD;
+elementsFEM4 = zeros((M-1)*(N-1),4);&#xD;
+for j = 1:N-1&#xD;
+    for i = 1:M-1&#xD;
+        elementsFEM4((j-1)*(M-1)+i ,:) = 3*M*N + [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];&#xD;
+    end&#xD;
+end&#xD;
+&#xD;
+%%%%% Combine coordinates and elements %%%%%&#xD;
+coordinatesFEM = [coord_x_1(:) coord_y_1(:);  coord_x_2(:) coord_y_2(:);  &#xD;
+                  coord_x_3(:) coord_y_3(:);  coord_x_4(:) coord_y_4(:) ];&#xD;
+              &#xD;
+elementsFEM = [elementsFEM1; elementsFEM2; elementsFEM3; elementsFEM4];&#xD;
+ &#xD;
+MeshSkeleton = ones(size(coordinatesFEM,1),1);&#xD;
+PlotMesh_show(MeshSkeleton, coordinatesFEM, elementsFEM);&#xD;
+&#xD;
+&#xD;
+%% %%%%% Add more elements at the top and the bottom %%%%%&#xD;
+[row1,col1] = find( coordinatesFEM(:,1)&gt;0 );&#xD;
+x_min = min(coordinatesFEM(row1,1));&#xD;
+x_max = max(coordinatesFEM(row1,1));&#xD;
+y_min = min(coordinatesFEM(row1,2));&#xD;
+y_max = max(coordinatesFEM(row1,2));&#xD;
+&#xD;
+[row2,col2] = find(coordinatesFEM(:,2) == y_min);&#xD;
+[row3,col3] = find(coordinatesFEM(:,2) == y_max);&#xD;
+&#xD;
+xList = unique(coordinatesFEM(row2,1));&#xD;
+yList1 = flipud([y_min:-16:40]');&#xD;
+yList2 = [y_max:16:1040-40]';&#xD;
+&#xD;
+[xGrid1,yGrid1] = ndgrid(xList,yList1);&#xD;
+[xGrid2,yGrid2] = ndgrid(xList,yList2);&#xD;
+DICpara.winstepsize = 16;&#xD;
+DICpara.ImgSize = [400,1040];&#xD;
+&#xD;
+DICmesh1 = MeshSetUp(xGrid1,yGrid1,DICpara);&#xD;
+DICmesh2 = MeshSetUp(xGrid2,yGrid2,DICpara);&#xD;
+&#xD;
+sizeCoordFEM1 = size(coordinatesFEM,1);&#xD;
+sizeCoordFEM2 = size(DICmesh1.coordinatesFEM,1);&#xD;
+&#xD;
+&#xD;
+%%%%% Combine all the elements %%%%%&#xD;
+coordinatesFEM = [coordinatesFEM; &#xD;
+                 DICmesh1.coordinatesFEM; &#xD;
+                 DICmesh2.coordinatesFEM];&#xD;
+elementsFEM = [elementsFEM; &#xD;
+               sizeCoordFEM1 + DICmesh1.elementsFEM; &#xD;
+               sizeCoordFEM1 + sizeCoordFEM2 + DICmesh2.elementsFEM];&#xD;
+ &#xD;
+&#xD;
+%%%%% Delete repeated nodes %%%%% &#xD;
+for tempi = 2:size(coordinatesFEM,1)&#xD;
+    if coordinatesFEM(tempi,1)&gt;0&#xD;
+        % Check whether it's repeated or not&#xD;
+        [min1,ind1] = min ( sum( abs( ones(tempi-1,1)*coordinatesFEM(tempi,:) - coordinatesFEM(1:tempi-1,:) ) , 2) );&#xD;
+        &#xD;
+        if min1 &lt; 1e-9&#xD;
+         &#xD;
+            coordinatesFEM(tempi,:) = 0*coordinatesFEM(tempi,:); % Clear this coordinate point&#xD;
+            &#xD;
+            [row1,col1] = find(elementsFEM == tempi);&#xD;
+            for tempj = 1:length(row1)&#xD;
+                elementsFEM(row1(tempj),col1(tempj)) = ind1;&#xD;
+            end&#xD;
+             &#xD;
+        end&#xD;
+    &#xD;
+    end&#xD;
+end&#xD;
+&#xD;
+&#xD;
+%%%%% Reorder elements %%%%%&#xD;
+for tempi = 1:size(elementsFEM,1)&#xD;
+    tempxy_center = mean(coordinatesFEM(elementsFEM(tempi,:),:));&#xD;
+    tempxy = coordinatesFEM(elementsFEM(tempi,:),:) - ones(4,1)*tempxy_center;&#xD;
+    temptheta = atan2( tempxy(:,2), tempxy(:,1) );&#xD;
+    temptheta(temptheta&lt;0) = temptheta(temptheta&lt;0) + 2*pi;&#xD;
+    &#xD;
+    [~,temptheta_ind] = sort(temptheta);&#xD;
+    elementsFEM(tempi,:) = elementsFEM(tempi,temptheta_ind);&#xD;
+end&#xD;
+&#xD;
+      &#xD;
+%%%%% Visualization %%%%%&#xD;
+MeshSkeleton = ones(size( coordinatesFEM,1),1);&#xD;
+PlotMesh_show(MeshSkeleton,  coordinatesFEM,  elementsFEM);&#xD;
+ &#xD;
+&#xD;
+%%%%% Save mat file %%%%%&#xD;
+save('plate_hole.mat','coordinatesFEM','elementsFEM');&#xD;
+&#xD;
+&#xD;
+&#xD;
+</originalCode>
+   <m-file>main_plate_hole</m-file>
+   <filename>E:\Jin\Franck\2D_FE_Global_DIC_v1.1\Mesh_plate_with_hole\main_plate_hole.m</filename>
+   <outputdir>E:\Jin\Franck\2D_FE_Global_DIC_v1.1\Mesh_plate_with_hole\html</outputdir>
+</mscript>
