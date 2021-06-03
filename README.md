@@ -16,6 +16,6 @@ I also extend the code to consider some long rectangular shape plates.
 I appreciate your comments and ratings to help me further improve this code. If you have other questions, feel free to contact me. Jin Yang (Caltech, solid mechanics, PhD '19): jyang526@wisc.edu -or- aldicdvc@gmail.com
 
 <p align="center">
-  <img width="538" height="535" src="https://github.com/jyang526843/Finite_element_mesh_plate_with_a_hole/blob/main/mesh.png">
+  <img width="400" height="400" src="https://github.com/jyang526843/Finite_element_mesh_plate_with_a_hole/blob/main/mesh.png">
  </p>
 
