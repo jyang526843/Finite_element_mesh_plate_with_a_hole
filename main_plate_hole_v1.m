@@ -17,7 +17,7 @@
 --------------------------------------------------------------------------
 %}
 % Version 1 : 15 November 2013
-% Modified version: June 02, 2021;  May 18, 2022
+% Modified version: June 02, 2021
 
 %%
 clc ; clear; close all;
@@ -26,19 +26,18 @@ clc ; clear; close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Dimensions of the plate
-L = 350-20 - (40+20) ;                  % Horizontal length of the plate
-B = 350-20 - (0+20) ;                     % Vertical breadth of the plate
+L = 350-20 - (40+20) ;                % Horizontal length of the plate
+B = 350-20 - (0+20) ;                 % Vertical breadth of the plate
 
 % Number of discretizations along xi and eta axis
 m = 9 ;
 n = 9 ;
- 
+%
 % Model plate as two regions which lie in first quadrant
 global R theta;
 R = 55 ;               % Radius of the hole at center
-
 %%%%%%%%%%%%%%%%%%%%%%%Dont change from here%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-theta = pi/2 ;              % Quarter angle of the hole
+theta = pi/2 ;          % Quarter angle of the hole
 global O P1 P2 P3 P4 P5 CMP ;
 O = [0,0] ;                 % Centre of plate and hole
 P1 = O + [R 0.] ;           % Edge of the hole and plate
@@ -46,17 +45,14 @@ P2 = O + [L/2 0.] ;         % Edge of the plate
 P3 = O + [L/2 B/2] ;        % Edge of the plate
 P4 = O + [0. B/2] ;         % Edge of the plate
 P5 = O + [0. R] ;           % Edge of the hole and plate
-CMP = O + [R*cos(theta/2.) R*sin(theta/2.)] ;
-
+CMP = [R*cos(theta/2.) R*sin(theta/2.)] ;
 % discretize along xi and eta axis
-xi = linspace(0.,1.,m) ;
+xi = linspace(0.,1,m) ;
 eta = linspace(0.,1.,n) ;
-
 % Number of Domains 
 Domain = 2 ;
 DX = cell(1,Domain) ;   
 DY = cell(1,Domain) ;
-
 for d = 1:Domain        % Loop for two domains lying in first coordinate
     % Initialize matrices in x and y axis
     X = zeros(m,n) ;
@@ -64,12 +60,10 @@ for d = 1:Domain        % Loop for two domains lying in first coordinate
 
     for i = 1:m
         Xi = xi(i) ;
-
         for j = 1:n
             Eta = eta(j) ;
         
             % Transfinite Interpolation 
-            % Following equation on this page: https://en.wikipedia.org/wiki/Transfinite_interpolation
             XY = (1-Eta)*Xb(Xi,d)+Eta*Xt(Xi,d)+(1-Xi)*Xl(Eta,d)+Xi*Xr(Eta,d)......
                 -(Xi*Eta*Xt(1,d)+Xi*(1-Eta)*Xb(1,d)+Eta*(1-Xi)*Xt(0,d)+(1-Xi)*(1-Eta)*Xb(0,d)) ;
     
@@ -81,11 +75,9 @@ for d = 1:Domain        % Loop for two domains lying in first coordinate
     DX{d} = X ;
     DY{d} = Y ;
 end
-
 % Arrange the coordinates for each domain
 X1 = DX{1} ; Y1 = DY{1} ;       % Grid for first domain
 X2 = DX{2} ; Y2 = DY{2} ;       % Grid for second domain
-
 X = [X1; X2(m-1:-1:1,:)] ;      % Merge both the domains
 Y = [Y1; Y2(m-1:-1:1,:)] ;
 
