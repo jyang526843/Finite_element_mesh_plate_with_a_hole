@@ -1,21 +1,28 @@
-function FEmesh = MeshSetUp(x,y)
+function DICmesh = MeshSetUp(x,y)
 %FUNCTION DICmesh = MeshSetUp(x,y,DICpara)
 % Objective: To set up a Q4 uniform FE-mesh  
 % ----------------------------------------------
 %
 %   INPUT: x,y       
 %           
-%   OUTPUT: Generated FE-mesh {coordinatesFEM, elementsFEM, ...}
+%   OUTPUT: Generated DIC FE-mesh {coordinatesFEM, elementsFEM, ...}
 %
 % ----------------------------------------------
 % Author: Jin Yang.  
-% Contact and support: jin.yang@austin.utexas.edu
-% Last time updated: 02/2020; 11/2022
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 02/2020.
 % ==============================================
 
 
- 
-%% Build FE-Mesh
+%% Initialization
+winstepsize = DICpara.winstepsize;
+try
+    ImgSize = DICpara.ImgSize;
+catch
+    ImgSize = [0,0];
+end
+
+%% mesh for global method
 M = size(x,2);  N = size(x,1);   % N is vertically in image; M is horizontally in image;
 coordinatesFEM = zeros(M*N ,2);
 
@@ -33,7 +40,28 @@ for j = 1:N-1
         elementsFEM((j-1)*(M-1)+i ,:) = [(j-1)*(M)+i (j-1)*(M)+i+1 j*(M)+i+1 j*(M)+i];
     end
 end
- 
+
+% mesh for local method
+% N is vertically in image; M is horizontally in image;
+
+coordinates = zeros((M+1)*(N+1),2);
+gridxtemp = [x(1,1)-0.5*winstepsize; x(:,1)+0.5*winstepsize];
+gridytemp = [y(1,1)-0.5*winstepsize y(1,:)+0.5*winstepsize]';
+clear gridx gridy
+[gridx,gridy]=meshgrid(gridxtemp,gridytemp);
+gridx = gridx'; gridy = gridy';
+for i = 1:size(coordinates,1)
+    coordinates(i,:)  = [gridx(i),gridy(i)];
+    % x is horizontal position in the image
+    % y is vertical position in the image
+end
+
+elements = zeros( M * N ,4);
+for j = 1:N
+    for i = 1:M
+        elements((j-1)*(M)+i ,:) = [(j-1)*(M+1)+i  (j-1)*(M+1)+i+1  j*(M+1)+i+1   j*(M+1)+i];
+    end
+end
 
 % ======== Assign BC values ==========
 % -------- dirichlet BC --------
@@ -52,12 +80,19 @@ neumann = [];
  
 
 %% Assign variables
-FEmesh.coordinatesFEM = coordinatesFEM;
-FEmesh.elementsFEM = elementsFEM;
-FEmesh.dirichlet = dirichlet;
-FEmesh.neumann = neumann;
-FEmesh.x0 = x; FEmesh.y0 = y; FEmesh.M = M; FEmesh.N = N; 
- 
+DICmesh.coordinatesFEM = coordinatesFEM;
+DICmesh.elementsFEM = elementsFEM;
+% DICmesh.coordinates = coordinates;
+% DICmesh.elements = elements;
+DICmesh.dirichlet = dirichlet;
+DICmesh.neumann = neumann;
+DICmesh.x0 = x; DICmesh.y0 = y; DICmesh.M = M; DICmesh.N = N; 
+
+try
+    DICmesh.y0World = (ImgSize(2)+1-DICmesh.y0);
+    DICmesh.coordinatesFEMWorld = [DICmesh.coordinatesFEM(:,1),ImgSize(2)+1-DICmesh.coordinatesFEM(:,2)];
+catch
+end
         
 
 
